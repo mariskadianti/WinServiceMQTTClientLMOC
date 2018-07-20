@@ -57,6 +57,7 @@ namespace LMOCUserService
                 Console.WriteLine("Client connection failed");
             }
 
+
             Console.WriteLine("Subscripe to webOnlineTrackingMalang");
             client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
             ushort msgId = client.Subscribe(new string[] { "webOnlineTracking" },
