@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -45,7 +46,8 @@ namespace LMOCUserService
             sw.Flush();
             //sw.Close();
 
-            MqttClient client = new MqttClient("innodev.vnetcloud.com");
+            string mqttServer = ConfigurationManager.AppSettings["MQTTServer"].ToString();
+            MqttClient client = new MqttClient(mqttServer);
             byte code = client.Connect(Guid.NewGuid().ToString(), "vsnbroker", "Password1!");
             Console.WriteLine("Connecting To innodev.vnetcloud.com");
             if (client.IsConnected)
@@ -57,17 +59,16 @@ namespace LMOCUserService
                 Console.WriteLine("Client connection failed");
             }
 
-
+            string topic = ConfigurationManager.AppSettings["TopicSubscribe"].ToString();
             Console.WriteLine("Subscripe to webOnlineTrackingMalang");
             client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
-            ushort msgId = client.Subscribe(new string[] { "webOnlineTracking" },
+            ushort msgId = client.Subscribe(new string[] { topic },
                  new byte[] { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE });
             Console.WriteLine("Connect");
             //StreamWriter sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "serviceLogs.txt", true);
 
-            
+
             sw.WriteLine(DateTime.Now.ToString() + " " + "Connected To innodev.vnetcloud.com");
-            
             sw.Flush();
             sw.Close();
         }
@@ -82,7 +83,6 @@ namespace LMOCUserService
             string Status = getTopic.Split(',').Last();
             Console.WriteLine("UserId: " + UserId + " - " + Status);
             StreamWriter sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "serviceLogs.txt", true);
-            sw.WriteLine(DateTime.Now.ToString() + " " + "Subscribe " + Convert.ToString(e.Topic));
             sw.WriteLine(DateTime.Now.ToString() + " " + "UserId: " + UserId + " - " + Status);
             sw.Flush();
             sw.Close();
@@ -100,8 +100,9 @@ namespace LMOCUserService
 
         static async Task<ResultMessage> UpdateUserStatusAsync(UserStatus UserStatus)
         {
+            string apiurl = ConfigurationManager.AppSettings["APIURL"].ToString();
             var client = new HttpClient();
-            client.BaseAddress = new Uri("https://lmocs.vnetcloud.com/api/");
+            client.BaseAddress = new Uri(apiurl);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
@@ -110,7 +111,7 @@ namespace LMOCUserService
                 $"api/Transaction?updateStatusUser", UserStatus);
             Console.WriteLine("User Status Updated Successfully.");
             StreamWriter sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "serviceLogs.txt", true);
-            sw.WriteLine(DateTime.Now.ToString() + " Update Status Success" );
+            sw.WriteLine(DateTime.Now.ToString() + " Update Status Success");
             sw.Flush();
             sw.Close();
             // Deserialize the updated product from the response body.
